@@ -14,8 +14,46 @@ def clickleave(driver):
     except Exception as e:
         print(f"Click leave failed: {e}")
 
+def click_captcha_checkbox(driver):
+    """Click the CAPTCHA checkbox to trigger the challenge."""
+    try:
+        # Switch to the CAPTCHA iframe
+        captcha_iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//iframe[contains(@src, 'recaptcha')]"))
+        )
+        driver.switch_to.frame(captcha_iframe)
+
+        # Click the checkbox
+        checkbox = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "recaptcha-anchor"))
+        )
+        checkbox.click()
+        print("CAPTCHA checkbox clicked.")
+        driver.switch_to.default_content()
+
+        # Wait briefly to ensure the challenge loads
+        time.sleep(3)
+    except Exception as e:
+        print(f"Error clicking CAPTCHA checkbox: {e}")
+        raise
+
 def profile(driver):
     driver.get("https://app.getgrass.io/dashboard/profile")
+
+def check_checkbox(driver):
+    """Check the 'Terms & Conditions' checkbox."""
+    try:
+        # Locate the checkbox element
+        checkbox = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "field-:ra:"))  # Update ID if needed
+        )
+        # Scroll into view and interact using JavaScript
+        driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+        driver.execute_script("arguments[0].click();", checkbox)
+        print("Checkbox checked successfully.")
+    except Exception as e:
+        print(f"Error checking checkbox: {e}")
+        raise
 
 def logout(driver):
     try:
@@ -41,7 +79,10 @@ password = "Rionaldi18*"
 # Konfigurasi WebDriver dengan uc
 options = uc.ChromeOptions()
 options.add_argument('--start-maximized')
-
+options.add_argument('--disable-security')
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-blink-features=AutomationControlled")
 driver = uc.Chrome(options=options)
 
 try:
@@ -83,7 +124,10 @@ try:
         confirm_password_input.send_keys(password)
         human_delay()
 
-        # Tunggu selama 45 detik
+        check_checkbox(driver)
+        human_delay()
+
+        click_captcha_checkbox(driver)
         time.sleep(45)
 
         # Coba ambil user_id dari localStorage dan tangani kemungkinan masalah
